@@ -1,0 +1,48 @@
+# Peak-specific deployment compose file.
+#
+# This pulls the pre-built image from GHCR (built by .github/workflows/docker.yml)
+# rather than building locally. Works on any host that has Docker + a network
+# connection to ghcr.io — Mac Mini, cloud VPS, ECS, etc.
+#
+# Usage:
+#   export BETTER_AUTH_SECRET=$(openssl rand -hex 32)   # save this somewhere safe
+#   export PAPERCLIP_PUBLIC_URL=http://localhost:3100   # or https://your.domain
+#   docker compose -f docker-compose.peak.yml up -d
+#
+# To pin a specific version instead of latest:
+#   PAPERCLIP_IMAGE_TAG=sha-a1b2c3d docker compose -f docker-compose.peak.yml up -d
+
+services:
+  paperclip:
+    image: ghcr.io/michaldanilczyk-ops/peak-paperclip:${PAPERCLIP_IMAGE_TAG:-latest}
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "${PAPERCLIP_PORT:-3100}:3100"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "3100"
+      SERVE_UI: "true"
+      PAPERCLIP_HOME: "/paperclip"
+      PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
+      PAPERCLIP_DEPLOYMENT_EXPOSURE: "${PAPERCLIP_DEPLOYMENT_EXPOSURE:-private}"
+      PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-http://localhost:3100}"
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set — run: openssl rand -hex 32}"
+      # Optional: provider keys for agents
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY:-}"
+    volumes:
+      # All runtime state (embedded Postgres, agent files, logs) lives here.
+      # Back this up to preserve your company data across image upgrades.
+      - peak-paperclip-data:/paperclip
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3100/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  peak-paperclip-data:
+    driver: local
