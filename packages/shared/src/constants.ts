@@ -384,6 +384,10 @@ export const PERMISSION_KEYS = [
   "tasks:assign",
   "tasks:assign_scope",
   "joins:approve",
+  // Wiki (LLM knowledge base) — readers are any authenticated company member;
+  // these permissions only gate editing.
+  "wiki:edit_company",
+  "wiki:edit_project",
 ] as const;
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
 

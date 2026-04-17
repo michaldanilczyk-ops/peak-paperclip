@@ -307,3 +307,12 @@ export {
   type SetPluginState,
   type ListPluginState,
 } from "./plugin.js";
+
+export {
+  wikiPageWriteSchema,
+  wikiPageUpdateSchema,
+  wikiContextQuerySchema,
+  type WikiPageWrite,
+  type WikiPageUpdate,
+  type WikiContextQuery,
+} from "./wiki.js";
